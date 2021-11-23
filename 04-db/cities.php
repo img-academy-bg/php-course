@@ -38,15 +38,28 @@ if (isset($_GET['delete'])) {
     $stmt->execute();
 }
 
+$limit = (int) ($_GET['perPage'] ?? 10);
+$currentPage = (int) ($_GET['currentPage'] ?? 1);
+$offset = ($currentPage - 1) * $limit;
+
 // Създаване на SQL заявка, която ще изведе градовете и името на държавата:
 $sql = "SELECT c.ID, c.Name, c.District, c.Population, co.Name AS CountryName "
         . "FROM city c "
         . "INNER JOIN country co ON co.Code = c.CountryCode "
-        . "ORDER BY c.ID";
+        . "ORDER BY c.ID "
+        . "LIMIT {$limit} OFFSET {$offset}";
 // Изпълнение на заявката
 $result = $pdo->query($sql);
 // Взимане на всички резултати за градовете:
 $cities = $result->fetchAll(PDO::FETCH_ASSOC);
+
+// SQL за преброяване на редовете в city
+$sqlCountCities = "SELECT COUNT(c.ID) AS countCities FROM city c "
+        . "INNER JOIN country co ON co.Code = c.CountryCode";
+$countResult = $pdo->query($sqlCountCities);
+$countCities = $countResult->fetch(PDO::FETCH_ASSOC); // ['countCities']
+$totalCities = (int) $countCities['countCities'];
+$totalPages = ceil($totalCities / $limit);
 
 // SQL заявка за извеждане на код и име на всяка държава:
 $sqlCountries = "SELECT Code, Name FROM country ORDER BY Name";
@@ -130,6 +143,41 @@ $countries =$resultCountries->fetchAll(PDO::FETCH_ASSOC);
                             <?php endforeach; ?>
                         </tbody>
                     </table>
+                </div>
+            </div>
+            <div class="row">
+                <div class="col-md-8 offset-md-2">
+                    <nav aria-label="Page navigation example">
+                        <ul class="pagination">
+                            <?php if ($currentPage > 1): ?>
+                            <li class="page-item">
+                                <a class="page-link" href="?currentPage=<?= $currentPage - 1; ?>" aria-label="Previous">
+                                    <span aria-hidden="true">&laquo;</span>
+                                </a>
+                            </li>
+                            <?php endif; ?>
+                            <?php for ($i = 1; $i <= $totalPages; $i++): 
+                                
+                                $liClasses = 'page-item';
+                                if ($i === $currentPage) {
+                                    $liClasses .= ' active';
+                                }
+                            ?>
+                            <li class="<?= $liClasses; ?>">
+                                <a class="page-link" href="?currentPage=<?= $i; ?>">
+                                    <?= $i; ?> 
+                                </a>
+                            </li>
+                            <?php endfor; ?>
+                            <?php if ($currentPage < $totalPages): ?>
+                            <li class="page-item">
+                                <a class="page-link" href="?currentPage=<?= $currentPage + 1; ?>" aria-label="Next">
+                                    <span aria-hidden="true">&raquo;</span>
+                                </a>
+                            </li>
+                            <?php endif; ?>
+                        </ul>
+                    </nav>
                 </div>
             </div>
         </main>
