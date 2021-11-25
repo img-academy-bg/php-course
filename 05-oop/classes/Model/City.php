@@ -12,17 +12,17 @@ namespace Img\Model;
 class City
 {
     
-    protected int $id;
+    protected int $id = 0;
     
-    protected string $name;
+    protected string $name = '';
     
-    protected string $district;
+    protected string $district = '';
     
-    protected string $countryCode;
+    protected string $countryCode = '';
     
-    protected int $population;
+    protected int $population = 0;
     
-    protected Country $country;
+    protected ?Country $country = null;
     
     public function getId(): int {
         return $this->id;
@@ -44,7 +44,7 @@ class City
         return $this->population;
     }
 
-    public function getCountry(): Country {
+    public function getCountry(): ?Country {
         return $this->country;
     }
 

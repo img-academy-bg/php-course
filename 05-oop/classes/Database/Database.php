@@ -34,11 +34,12 @@ class Database {
      * Метод, който изпълнява SQL заявка и връща резултата
      * 
      * @param string $sql
+     * @param array $params [Optional] Default empty array
      * @return array|null
      */
-    public function query(string $sql): ?array
+    public function query(string $sql, array $params = []): ?array
     {
-        $stmt = $this->pdo->query($sql);
+        $stmt = $this->executeStatement($sql, $params);
         if ($stmt->rowCount()) {
             return $stmt->fetchAll(PDO::FETCH_ASSOC);
         }
@@ -50,10 +51,31 @@ class Database {
      * Метод, който изпълнява SQL заявка и връща брой засегнати редове
      * 
      * @param string $sql
+     * @param array $params [Optional] Default empty array
      * @return int
      */
-    public function exec(string $sql): int
+    public function exec(string $sql, array $params = []): int
     {
-        return $this->pdo->exec($sql);
+        $stmt = $this->executeStatement($sql, $params);
+        return $stmt->rowCount();
+    }
+    
+    public function lastInsertId()
+    {
+        return $this->pdo->lastInsertId();
+    }
+    
+    private function executeStatement(string $sql, array $params)
+    {
+        $stmt = $this->pdo->prepare($sql);
+        // [] == false
+        if ($params) {
+            foreach ($params as $name => $value) {
+                $stmt->bindValue(':'.$name, $value);
+            }
+        }
+        $stmt->execute();
+        
+        return $stmt;
     }
 }

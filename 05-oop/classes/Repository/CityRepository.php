@@ -12,20 +12,13 @@ use Img\Model\City;
  *
  * @author ksavc
  */
-class CityRepository
+class CityRepository extends AbstractRepository
 {
-    
-    private Database $db;
-    
-    public function __construct(Database $db)
-    {
-        $this->db = $db;
-    }
 
     public function fetchById(int $id): ?City
     {
-        $sql = "SELECT * FROM city WHERE ID = {$id}";
-        $result = (array) $this->db->query($sql);
+        $sql = "SELECT * FROM city WHERE ID = :id";
+        $result = (array) $this->db->query($sql, ['id' => $id]);
         if ($result) {
             return $this->createObjectFromArray($result[0]);
         }
@@ -47,6 +40,45 @@ class CityRepository
     public function fetchByCountry(Country $country): array
     {
         return $this->fetchByCountryCode($country->code);
+    }
+    
+    public function save(City $city): bool
+    {
+        $values = [
+            'name' => $city->getName(),
+            'countryCode' => $city->getCountryCode(),
+            'district' => $city->getDistrict(),
+            'population' => $city->getPopulation()
+        ];
+        if ($city->getId()) {
+            return $this->update($values, $city->getId());
+        } else {
+            $return = $this->insert($values);
+            if ($return) {
+                $city->setId($this->db->lastInsertId());
+            }
+            return $return;
+        }
+    }
+    
+    protected function insert(array $values): bool
+    {
+        $sql = "INSERT INTO city VALUES(NULL, :name, :countryCode, :district, :population)";
+        return (bool) $this->db->exec($sql, $values);
+    }
+    
+    protected function update(array $values, int $id): bool
+    {
+        $sql = "UPDATE city SET "
+                . "Name = :name, "
+                . "CountryCode = :countryCode, "
+                . "District = :district, "
+                . "Population = :population "
+                . "WHERE ID = :id";
+        
+        $values['id'] = $id;
+        
+        return (bool) $this->db->exec($sql, $values);
     }
     
     private function createObjectFromArray(array $row): City
