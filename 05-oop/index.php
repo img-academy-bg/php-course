@@ -2,7 +2,7 @@
 
 // 05-oop/index.php
 // Функция, която ще зарежда файлове с класове:
-$autoloadCallback = function(string $className) {
+$autoloadCallback = function (string $className) {
     $parts = explode('\\', $className);
     $vendorNs = array_shift($parts);
     if ($vendorNs === 'Img') {
@@ -16,30 +16,25 @@ $autoloadCallback = function(string $className) {
 // регистриране на функцията за зареждане:
 spl_autoload_register($autoloadCallback);
 
-use Img\Database\Database;
-use Img\Repository\CityRepository;
-use Img\Model\City;
+use Img\Exception\NoTableException;
+use Img\Factory\CityRepositoryFactory;
 
-$db = new Database('localhost', 'root', '', 'world');
-$cityRepository = new CityRepository($db);
+try {
+    
+    $cityRepository = CityRepositoryFactory::create();
+    $city = $cityRepository->fetchById(540);
 
-$city = new City();
-$city->setName('Veliko Tyrnovo')
-        ->setCountryCode('BGR')
-        ->setDistrict('Veliko Tyrnovo')
-        ->setPopulation(65000);
-
-// Изваждане на обект с данни от БД
-//$city = $cityRepository->fetchById(539);
-// Промяна на данните:
-//$city->setName('София');
-//// Запазване на променените данни:
-$cityRepository->save($city);
-
-echo '<dl>';
-echo '<dt>ID:</dt><dd>' . $city->getId().'</dd>';
-echo '<dt>Name:</dt><dd>' . $city->getName().'</dd>';
-echo '<dt>Population:</dt><dd>' . $city->getPopulation().'</dd>';
-echo '<dt>District:</dt><dd>' . $city->getDistrict().'</dd>';
-echo '<dt>Country:</dt><dd>' . $city->getCountryCode().'</dd>';
-echo '</dl>';
+    echo '<dl>';
+    echo '<dt>ID:</dt><dd>' . $city->getId() . '</dd>';
+    echo '<dt>Name:</dt><dd>' . $city->getName() . '</dd>';
+    echo '<dt>Population:</dt><dd>' . $city->getPopulation() . '</dd>';
+    echo '<dt>District:</dt><dd>' . $city->getDistrict() . '</dd>';
+    echo '<dt>Country Name:</dt><dd>' . $city->getCountry()->getName() . '</dd>';
+    echo '<dt>Continent:</dt><dd>' . $city->getCountry()->getContinent() . '</dd>';
+    echo '</dl>';
+} catch (NoTableException $ex) {
+    echo '<h1>There is a problem with the page, try again later</h1>';
+    echo '<pre>';
+    echo $ex->getTraceAsString();
+    echo '</pre>';
+}

@@ -9,7 +9,7 @@ namespace Img\Model;
  *
  * @author ksavc
  */
-class Country
+class Country implements ModelInterface
 {
 
     protected string $code;
@@ -54,5 +54,22 @@ class Country
     public function setContinent(string $continent) {
         $this->continent = $continent;
         return $this;
+    }
+
+    public function getPrimaryKeyName(): string {
+        return 'Code';
+    }
+
+    public function getPrimaryKeyValue(): mixed {
+        return $this->getCode();
+    }
+
+    public function getValues(): array {
+        return [
+            'Code' => $this->getCode(),
+            'Name' => $this->getName(),
+            'Population' => $this->getPopulation(),
+            'Continent' => $this->getContinent(),
+        ];
     }
 }

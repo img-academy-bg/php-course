@@ -19,7 +19,25 @@ class Database {
      */
     private PDO $pdo;
     
-    public function __construct(
+    private static ?Database $instance = null;
+    
+    public static function getInstance(): self {
+        if (!self::$instance) {
+            self::$instance = new self('localhost', 'root', '', 'world');
+        }
+        
+        return self::$instance;
+    }
+    
+    public function __clone() {
+        throw new \LogicException('Cannot clone Database object');
+    }
+    
+    public function __serialize() {
+        throw new \LogicException('Cannot serialize Database object');
+    }
+    
+    private function __construct(
         string $host,
         string $user, 
         string $pass, 

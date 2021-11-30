@@ -4,8 +4,9 @@
 
 namespace Img\Repository;
 
-use Img\Database\Database;
+use Img\Model\ModelInterface;
 use Img\Model\City;
+use Img\Database\Database;
 
 /**
  * Description of CityRepository
@@ -14,13 +15,24 @@ use Img\Model\City;
  */
 class CityRepository extends AbstractRepository
 {
+    
+    protected string $table = 'city';
+    
+    protected CountryRepository $countryRepository;
+    
+    public function __construct(
+        Database $db,
+        CountryRepository $countryRepository
+    ) {
+        parent::__construct($db);
+        $this->countryRepository = $countryRepository;
+    }
 
     public function fetchById(int $id): ?City
     {
-        $sql = "SELECT * FROM city WHERE ID = :id";
-        $result = (array) $this->db->query($sql, ['id' => $id]);
+        $result = $this->fetchBy('ID', $id);
         if ($result) {
-            return $this->createObjectFromArray($result[0]);
+            return $result[0];
         }
         
         return null;
@@ -28,13 +40,7 @@ class CityRepository extends AbstractRepository
     
     public function fetchByCountryCode(string $countryCode): array
     {
-        $sql = "SELECT * FROM city WHERE CountryCode = '{$countryCode}'";
-        $result = (array) $this->db->query($sql);
-        $cities = [];
-        foreach ($result as $row) {
-            $cities[] = $this->createObjectFromArray($row);
-        }
-        return $cities;
+        return $this->fetchBy('CountryCode', $countryCode);
     }
     
     public function fetchByCountry(Country $country): array
@@ -42,53 +48,26 @@ class CityRepository extends AbstractRepository
         return $this->fetchByCountryCode($country->code);
     }
     
-    public function save(City $city): bool
+    public function save(ModelInterface $city): bool
     {
-        $values = [
-            'name' => $city->getName(),
-            'countryCode' => $city->getCountryCode(),
-            'district' => $city->getDistrict(),
-            'population' => $city->getPopulation()
-        ];
-        if ($city->getId()) {
-            return $this->update($values, $city->getId());
-        } else {
-            $return = $this->insert($values);
-            if ($return) {
-                $city->setId($this->db->lastInsertId());
-            }
-            return $return;
+        $result = parent::save($city);
+        if ($result && !$city->getId()) {
+            $city->setId($this->db->lastInsertId());
         }
+        return $result;
     }
     
-    protected function insert(array $values): bool
+    public function createObjectFromRow(array $row): City
     {
-        $sql = "INSERT INTO city VALUES(NULL, :name, :countryCode, :district, :population)";
-        return (bool) $this->db->exec($sql, $values);
-    }
-    
-    protected function update(array $values, int $id): bool
-    {
-        $sql = "UPDATE city SET "
-                . "Name = :name, "
-                . "CountryCode = :countryCode, "
-                . "District = :district, "
-                . "Population = :population "
-                . "WHERE ID = :id";
+        $country = $this->countryRepository->fetchByCode($row['CountryCode']);
         
-        $values['id'] = $id;
-        
-        return (bool) $this->db->exec($sql, $values);
-    }
-    
-    private function createObjectFromArray(array $row): City
-    {
         $cityObject = new City();
         
         return $cityObject->setId($row['ID'])
                 ->setName($row['Name'])
                 ->setCountryCode($row['CountryCode'])
                 ->setPopulation($row['Population'])
-                ->setDistrict($row['District']);
+                ->setDistrict($row['District'])
+                ->setCountry($country);
     }
 }

@@ -9,7 +9,7 @@ namespace Img\Model;
  *
  * @author ksavc
  */
-class City
+class City implements ModelInterface
 {
     
     protected int $id = 0;
@@ -73,8 +73,25 @@ class City
         return $this;
     }
 
-    public function setCountry(Country $country) {
+    public function setCountry(?Country $country) {
         $this->country = $country;
         return $this;
+    }
+
+    public function getPrimaryKeyName(): string {
+        return 'ID';
+    }
+
+    public function getPrimaryKeyValue(): mixed {
+        return $this->getId();
+    }
+
+    public function getValues(): array {
+        return [
+            'Name' => $this->getName(),
+            'District' => $this->getDistrict(),
+            'Population' => $this->getPopulation(),
+            'CountryCode' => $this->getCountryCode(),
+        ];
     }
 }
